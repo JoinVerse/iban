@@ -1,17 +1,23 @@
-package iban
+package iban_test
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"testing"
+
+	"github.com/JoinVerse/iban"
+	"github.com/stretchr/testify/assert"
 )
 
 var validIBANTestNumbers = []struct {
-	number string
+	number   string
+	bankCode string
+	sortCode string
 }{
-	{"LU28 0019 4006 4475 0000"},
-	{"ES9121000418450200051332"},
-	{"ES9121000418450200051332       "},
+	{"LU28 0019 4006 4475 0000", "001", ""},
+	{"ES9121000418450200051332", "2100", ""},
+	{"ES3502297205860300042630", "0229", ""},
+	{"ES9121000418450200051332       ", "2100", ""},
 }
 
 var invalidIBANTestNumbers = []struct {
@@ -22,17 +28,20 @@ var invalidIBANTestNumbers = []struct {
 
 func TestValidIBAN(t *testing.T) {
 	for _, ibanTestNumber := range validIBANTestNumbers {
-		result, err := NewIBAN(ibanTestNumber.number)
-		if err != nil || result == (IBAN{}) {
+		result, err := iban.NewIBAN(ibanTestNumber.number)
+		if err != nil || result == (iban.IBAN{}) {
 			t.Error("No object was created!")
 			t.Log(err)
 		}
+
+		assert.Equal(t, ibanTestNumber.bankCode, result.BankCode)
+		assert.Equal(t, ibanTestNumber.sortCode, result.SortCode)
 	}
 }
 
 func TestInvalidIBAN(t *testing.T) {
 	for _, ibanTestNumber := range invalidIBANTestNumbers {
-		_, err := NewIBAN(ibanTestNumber.number)
+		_, err := iban.NewIBAN(ibanTestNumber.number)
 		if err == nil {
 			t.Error("No error was thrown for an invalid IBAN number!")
 		}
@@ -64,7 +73,7 @@ func TestIsCorrectIban(t *testing.T) {
 	}
 
 	for k, message := range iList.IBANs {
-		ok, _, _ := IsCorrectIban(message.IBAN, false)
+		ok, _, _ := iban.IsCorrectIban(message.IBAN, false)
 		if !ok {
 			t.Error("for test waiting for true got false", k, ":", message)
 		}
